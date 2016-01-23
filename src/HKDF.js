@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,44 +16,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const ArrayBufferUtils = require("./ArrayBufferUtils")
-const co = require("co")
+const ArrayBufferUtils = require('./ArrayBufferUtils')
+const co = require('co')
 
-var hashOutputSize = 32;
-var iterationStartOffset = 1; // TODO: Depends on protocol version
+var hashOutputSize = 32
+var iterationStartOffset = 1 // TODO: Depends on protocol version
 
-function HKDF(crypto) {
-    var self = this;
+function HKDF (crypto) {
+  var self = this
 
-    var extract = (salt, inputKeyMaterial) => crypto.hmac(salt, inputKeyMaterial);
+  var extract = (salt, inputKeyMaterial) => crypto.hmac(salt, inputKeyMaterial)
 
-    var expand = co.wrap(function*(prk, info, outputByteCount) {
-        var iterations = Math.ceil(outputByteCount / hashOutputSize);
-        var mixin = new ArrayBuffer(0);
-        var result = new Uint8Array(outputByteCount);
-        var remainingBytes = outputByteCount;
-        for (var i = iterationStartOffset; i < iterations + iterationStartOffset; i++) {
-            var inputBytes = ArrayBufferUtils.concat(mixin, info, new Uint8Array([i]).buffer);
-            var stepResultArray = yield crypto.hmac(prk, inputBytes);
-            var stepResult = new Uint8Array(stepResultArray);
-            var stepSize = Math.min(remainingBytes, stepResult.length);
-            var stepSlice = stepResult.subarray(0, stepSize);
-            result.set(stepSlice, outputByteCount - remainingBytes);
-            mixin = stepResultArray;
-            remainingBytes -= stepSize;
-        }
-        return result.buffer;
-    });
+  var expand = co.wrap(function * (prk, info, outputByteCount) {
+    var iterations = Math.ceil(outputByteCount / hashOutputSize)
+    var mixin = new ArrayBuffer(0)
+    var result = new Uint8Array(outputByteCount)
+    var remainingBytes = outputByteCount
+    for (var i = iterationStartOffset; i < iterations + iterationStartOffset; i++) {
+      var inputBytes = ArrayBufferUtils.concat(mixin, info, new Uint8Array([i]).buffer)
+      var stepResultArray = yield crypto.hmac(prk, inputBytes)
+      var stepResult = new Uint8Array(stepResultArray)
+      var stepSize = Math.min(remainingBytes, stepResult.length)
+      var stepSlice = stepResult.subarray(0, stepSize)
+      result.set(stepSlice, outputByteCount - remainingBytes)
+      mixin = stepResultArray
+      remainingBytes -= stepSize
+    }
+    return result.buffer
+  })
 
-    self.deriveSecretsWithSalt = co.wrap(function*(inputKeyMaterial, salt, info, outputByteCount) {
-        var prk = yield extract(salt, inputKeyMaterial);
-        return yield expand(prk, info, outputByteCount);
-    });
+  self.deriveSecretsWithSalt = co.wrap(function * (inputKeyMaterial, salt, info, outputByteCount) {
+    var prk = yield extract(salt, inputKeyMaterial)
+    return yield expand(prk, info, outputByteCount)
+  })
 
-    self.deriveSecrets = (inputKeyMaterial, info, outputByteCount) =>
-        self.deriveSecretsWithSalt(inputKeyMaterial, new ArrayBuffer(hashOutputSize), info, outputByteCount);
+  self.deriveSecrets = (inputKeyMaterial, info, outputByteCount) => self.deriveSecretsWithSalt(inputKeyMaterial, new ArrayBuffer(hashOutputSize), info, outputByteCount)
 
-    Object.freeze(self);
+  Object.freeze(self)
 }
 
-module.exports = HKDF;
+module.exports = HKDF

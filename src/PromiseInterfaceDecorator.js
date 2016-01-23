@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -17,10 +17,10 @@
  */
 
 var wrap = (fn) => {
-    return function() {
-        return Promise.resolve(fn.apply(this, arguments));
-    };
-};
+  return function () {
+    return Promise.resolve(fn.apply(this, arguments))
+  }
+}
 
 /**
  * Wraps an instance of a concrete class converting all methods to return promises.
@@ -28,15 +28,15 @@ var wrap = (fn) => {
  * This allows the consumer to deal only with promises.
  */
 class PromiseInterfaceDecorator {
-    constructor(impl, methodNames) {
-        methodNames.forEach((methodName) => {
-            if (!impl[methodName]) {
-                throw new Error("interface must implement " + methodName);
-            }
-            this[methodName] = wrap(impl[methodName]);
-        });
-        Object.freeze(this);
-    }
+  constructor (impl, methodNames) {
+    methodNames.forEach((methodName) => {
+      if (!impl[methodName]) {
+        throw new Error('interface must implement ' + methodName)
+      }
+      this[methodName] = wrap(impl[methodName])
+    })
+    Object.freeze(this)
+  }
 }
 
 module.exports = PromiseInterfaceDecorator

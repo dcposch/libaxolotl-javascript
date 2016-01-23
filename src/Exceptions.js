@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,16 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class InvalidMessageException extends Error {}
-class DuplicateMessageException extends Error {}
-class InvalidKeyException extends Error {}
-class UnsupportedProtocolVersionException extends Error {}
-class UntrustedIdentityException extends Error {}
+class InvalidMessageException extends Error {
+}
+class DuplicateMessageException extends Error {
+}
+class InvalidKeyException extends Error {
+}
+class UnsupportedProtocolVersionException extends Error {
+}
+class UntrustedIdentityException extends Error {
+}
 
 module.exports = {
   InvalidMessageException,
   DuplicateMessageException,
   InvalidKeyException,
   UnsupportedProtocolVersionException,
-  UntrustedIdentityException
-}
+  UntrustedIdentityException}

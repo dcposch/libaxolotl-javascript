@@ -1,20 +1,21 @@
-"use strict"
-const chai = require("chai")
+/* global describe, it */
+'use strict'
+const chai = require('chai')
 
-const PromiseInterfaceDecorator = require("../../src/PromiseInterfaceDecorator")
+const PromiseInterfaceDecorator = require('../../src/PromiseInterfaceDecorator')
 
-var assert = chai.assert;
+var assert = chai.assert
 
-describe("PromiseInterfaceDecorator", () => {
-    it("throws if the passed in object doesn't implement the required interface", () => {
-        assert.throws(() => {
-            new PromiseInterfaceDecorator({}, ["test"]);
-        });
-    });
-    it("wraps the object's methods so that they return promises", () => {
-        var impl = new PromiseInterfaceDecorator({
-            test: () => 3
-        }, ["test"]);
-        assert.instanceOf(impl.test(), Promise);
-    });
-});
+describe('PromiseInterfaceDecorator', () => {
+  it("throws if the passed in object doesn't implement the required interface", () => {
+    assert.throws(() => {
+      new PromiseInterfaceDecorator({}, ['test']) // eslint-disable-line
+    })
+  })
+  it("wraps the object's methods so that they return promises", () => {
+    var impl = new PromiseInterfaceDecorator({
+      test: () => 3
+    }, ['test'])
+    assert.instanceOf(impl.test(), Promise)
+  })
+})

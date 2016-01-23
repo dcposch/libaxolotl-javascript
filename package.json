@@ -7,6 +7,7 @@
     "test": "test"
   },
   "devDependencies": {
+    "standard": "*",
     "blanket": "^1.1.6",
     "bytebuffer": "^3.5.4",
     "chai": "~1.10.0",
@@ -28,7 +29,7 @@
     "sinon": "~1.12.2"
   },
   "scripts": {
-    "test": "grunt test"
+    "test": "standard && grunt test"
   },
   "keywords": [
     "axolotl",

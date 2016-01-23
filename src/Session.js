@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -15,11 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-"use strict"
+'use strict'
 
-const ProtocolConstants = require("./ProtocolConstants")
-const ArrayBufferUtils = require("./ArrayBufferUtils")
-const SessionState = require("./SessionState")
+const ProtocolConstants = require('./ProtocolConstants')
+const SessionState = require('./SessionState')
 
 /**
  * Represents the entire state of an Axolotl session.
@@ -28,31 +27,31 @@ const SessionState = require("./SessionState")
  * @constructor
  */
 class Session {
-    constructor(session) {
-        this.states = [];
-        if (session) {
-            for (let state of session.states) {
-                this.states.push(new SessionState(state));
-            }
-        }
-        Object.seal(this);
+  constructor (session) {
+    this.states = []
+    if (session) {
+      for (let state of session.states) {
+        this.states.push(new SessionState(state))
+      }
     }
+    Object.seal(this)
+  }
 
-    mostRecentState() {
-        return this.states[0];
-    }
+  mostRecentState () {
+    return this.states[0]
+  }
 
-    addState(state) {
-        this.states.unshift(state);
-        if (this.states.length > ProtocolConstants.maximumSessionStatesPerIdentity) {
-            this.states.pop();
-        }
+  addState (state) {
+    this.states.unshift(state)
+    if (this.states.length > ProtocolConstants.maximumSessionStatesPerIdentity) {
+      this.states.pop()
     }
+  }
 
-    removeState(state) {
-        var index = this.states.indexOf(state);
-        this.states.splice(index, 1);
-    }
+  removeState (state) {
+    var index = this.states.indexOf(state)
+    this.states.splice(index, 1)
+  }
 }
 
 module.exports = Session

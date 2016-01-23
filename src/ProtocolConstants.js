@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -17,20 +17,20 @@
  */
 
 module.exports = {
-    currentVersion: 3,
+  currentVersion: 3,
 
-    // Sizes of various fields
-    macByteCount: 8,
-    cipherKeyByteCount: 32,
-    macKeyByteCount: 32,
-    ivByteCount: 16,
-    dhKeyByteCount: 32,
-    rootKeyByteCount: 32,
-    chainKeyByteCount: 32,
+  // Sizes of various fields
+  macByteCount: 8,
+  cipherKeyByteCount: 32,
+  macKeyByteCount: 32,
+  ivByteCount: 16,
+  dhKeyByteCount: 32,
+  rootKeyByteCount: 32,
+  chainKeyByteCount: 32,
 
-    // Client parameters
-    // TODO: Make these configurable?
-    maximumRetainedReceivedChainKeys: 5,
-    maximumMissedMessages: 2000,
-    maximumSessionStatesPerIdentity: 40
-};
+  // Client parameters
+  // TODO: Make these configurable?
+  maximumRetainedReceivedChainKeys: 5,
+  maximumMissedMessages: 2000,
+  maximumSessionStatesPerIdentity: 40
+}

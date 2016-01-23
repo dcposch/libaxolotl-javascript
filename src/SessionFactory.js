@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,198 +16,195 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const WhisperProtos = require("./WhisperProtos")
-const ArrayBufferUtils = require("./ArrayBufferUtils")
-const Messages = require("./Messages")
-const Ratchet = require("./Ratchet")
-const SessionState = require("./SessionState")
-const Session = require("./Session")
-const co = require("co")
+const ArrayBufferUtils = require('./ArrayBufferUtils')
+const Messages = require('./Messages')
+const Ratchet = require('./Ratchet')
+const SessionState = require('./SessionState')
+const Session = require('./Session')
+const co = require('co')
 const Exceptions = require('./Exceptions')
 const InvalidKeyException = Exceptions.InvalidKeyException
 const UnsupportedProtocolVersionException = Exceptions.UnsupportedProtocolVersionException
-const UntrustedIdentityException = Exceptions.UntrustedIdentityException
 
-function SessionFactory(crypto, store) {
-    const self = this;
+function SessionFactory (crypto, store) {
+  const self = this
 
-    const ratchet = new Ratchet(crypto);
+  const ratchet = new Ratchet(crypto)
 
-    /**
-     * @typedef {Object} PreKeyBundle
-     * @property {ArrayBuffer} identityKey - The remote identity's public key.
-     * @property {Number} preKeyId - The identifier of the pre-key included in this bundle.
-     * @property {ArrayBuffer} preKey - The public half of the pre-key.
-     * @property {Number} signedPreKeyId - The identifier of the signed pre-key included in this bundle.
-     * @property {ArrayBuffer} signedPreKey - The public half of the signed pre-key.
-     * @property {ArrayBuffer} signedPreKeySignature - The signature associated with the `signedPreKey`
-     */
+  /**
+   * @typedef {Object} PreKeyBundle
+   * @property {ArrayBuffer} identityKey - The remote identity's public key.
+   * @property {Number} preKeyId - The identifier of the pre-key included in this bundle.
+   * @property {ArrayBuffer} preKey - The public half of the pre-key.
+   * @property {Number} signedPreKeyId - The identifier of the signed pre-key included in this bundle.
+   * @property {ArrayBuffer} signedPreKey - The public half of the signed pre-key.
+   * @property {ArrayBuffer} signedPreKeySignature - The signature associated with the `signedPreKey`
+   */
 
-    /**
-     * Create a session from a pre-key bundle, probably retrieved from a server.
-     * @method
-     * @type {PreKeyBundle} retrievedPreKeyBundle - a pre-key bundle
-     * @returns {Promise.<Session, Error>}
-     */
-    self.createSessionFromPreKeyBundle = co.wrap(function*(retrievedPreKeyBundle) {
-        if (retrievedPreKeyBundle.signedPreKey) {
-            var validSignature = yield crypto.verifySignature(retrievedPreKeyBundle.identityKey,
-                retrievedPreKeyBundle.signedPreKey,
-                retrievedPreKeyBundle.signedPreKeySignature);
-            if (!validSignature) {
-                throw new InvalidKeyException("Invalid signature on device key");
-            }
-        }
+  /**
+   * Create a session from a pre-key bundle, probably retrieved from a server.
+   * @method
+   * @type {PreKeyBundle} retrievedPreKeyBundle - a pre-key bundle
+   * @returns {Promise.<Session, Error>}
+   */
+  self.createSessionFromPreKeyBundle = co.wrap(function * (retrievedPreKeyBundle) {
+    if (retrievedPreKeyBundle.signedPreKey) {
+      var validSignature = yield crypto.verifySignature(retrievedPreKeyBundle.identityKey,
+        retrievedPreKeyBundle.signedPreKey,
+        retrievedPreKeyBundle.signedPreKeySignature)
+      if (!validSignature) {
+        throw new InvalidKeyException('Invalid signature on device key')
+      }
+    }
 
-        if (!retrievedPreKeyBundle.preKey && !retrievedPreKeyBundle.signedPreKey) {
-            throw new InvalidKeyException("Both signed and unsigned pre keys are absent");
-        }
+    if (!retrievedPreKeyBundle.preKey && !retrievedPreKeyBundle.signedPreKey) {
+      throw new InvalidKeyException('Both signed and unsigned pre keys are absent')
+    }
 
-        var supportsV3 = !!retrievedPreKeyBundle.signedPreKey;
-        var ourBaseKeyPair = yield crypto.generateKeyPair();
-        var theirSignedPreKey = supportsV3 ? retrievedPreKeyBundle.signedPreKey : retrievedPreKeyBundle.preKey;
+    var supportsV3 = !!retrievedPreKeyBundle.signedPreKey
+    var ourBaseKeyPair = yield crypto.generateKeyPair()
+    var theirSignedPreKey = supportsV3 ? retrievedPreKeyBundle.signedPreKey : retrievedPreKeyBundle.preKey
 
-        var aliceParameters = {
-            sessionVersion: supportsV3 ? 3 : 2,
-            ourBaseKeyPair: ourBaseKeyPair,
-            ourIdentityKeyPair: yield store.getLocalIdentityKeyPair(),
-            theirIdentityKey: retrievedPreKeyBundle.identityKey,
-            theirSignedPreKey: theirSignedPreKey,
-            theirRatchetKey: theirSignedPreKey,
-            theirOneTimePreKey: supportsV3 ? retrievedPreKeyBundle.preKey : undefined
-        };
+    var aliceParameters = {
+      sessionVersion: supportsV3 ? 3 : 2,
+      ourBaseKeyPair: ourBaseKeyPair,
+      ourIdentityKeyPair: yield store.getLocalIdentityKeyPair(),
+      theirIdentityKey: retrievedPreKeyBundle.identityKey,
+      theirSignedPreKey: theirSignedPreKey,
+      theirRatchetKey: theirSignedPreKey,
+      theirOneTimePreKey: supportsV3 ? retrievedPreKeyBundle.preKey : undefined
+    }
 
-        var sessionState = yield initializeAliceSession(aliceParameters);
-        sessionState.pendingPreKey = {
-            preKeyId: supportsV3 ? retrievedPreKeyBundle.preKeyId : null,
-            signedPreKeyId: retrievedPreKeyBundle.signedPreKeyId,
-            baseKey: ourBaseKeyPair.public
-        };
-        sessionState.localRegistrationId = yield store.getLocalRegistrationId();
-        var session = new Session();
-        session.addState(sessionState);
-        return session;
-    });
+    var sessionState = yield initializeAliceSession(aliceParameters)
+    sessionState.pendingPreKey = {
+      preKeyId: supportsV3 ? retrievedPreKeyBundle.preKeyId : null,
+      signedPreKeyId: retrievedPreKeyBundle.signedPreKeyId,
+      baseKey: ourBaseKeyPair.public
+    }
+    sessionState.localRegistrationId = yield store.getLocalRegistrationId()
+    var session = new Session()
+    session.addState(sessionState)
+    return session
+  })
 
-    /**
-     * Create a session from a PreKeyWhisperMessage.
-     * @method
-     * @type {Session} session - a session, if one exists, or null otherwise.
-     * @type {ArrayBuffer} preKeyWhisperMessageBytes - the bytes of a PreKeyWhisperMessage.
-     * @returns {Promise.<Session, Error>}
-     */
-    self.createSessionFromPreKeyWhisperMessage = co.wrap(function*(session, preKeyWhisperMessageBytes) {
-        var preKeyWhisperMessage = Messages.decodePreKeyWhisperMessage(preKeyWhisperMessageBytes);
-        if (preKeyWhisperMessage.version.current !== 3) {
-            // TODO: Support protocol version 2
-            throw new UnsupportedProtocolVersionException("Protocol version " +
-                preKeyWhisperMessage.version.current + " is not supported");
-        }
-        var message = preKeyWhisperMessage.message;
+  /**
+   * Create a session from a PreKeyWhisperMessage.
+   * @method
+   * @type {Session} session - a session, if one exists, or null otherwise.
+   * @type {ArrayBuffer} preKeyWhisperMessageBytes - the bytes of a PreKeyWhisperMessage.
+   * @returns {Promise.<Session, Error>}
+   */
+  self.createSessionFromPreKeyWhisperMessage = co.wrap(function * (session, preKeyWhisperMessageBytes) {
+    var preKeyWhisperMessage = Messages.decodePreKeyWhisperMessage(preKeyWhisperMessageBytes)
+    if (preKeyWhisperMessage.version.current !== 3) {
+      // TODO: Support protocol version 2
+      throw new UnsupportedProtocolVersionException('Protocol version ' +
+        preKeyWhisperMessage.version.current + ' is not supported')
+    }
+    var message = preKeyWhisperMessage.message
 
-        if (session) {
-            for (var cachedSessionState of session.states) {
-                if (cachedSessionState.theirBaseKey &&
-                    ArrayBufferUtils.areEqual(cachedSessionState.theirBaseKey, message.baseKey)) {
-                    return {
-                        session: session,
-                        identityKey: message.identityKey,
-                        registrationId: message.registrationId
-                    };
-                }
-            }
-        }
-
-        var ourSignedPreKeyPair = yield store.getLocalSignedPreKeyPair(message.signedPreKeyId);
-
-        var preKeyPair;
-        if (message.preKeyId !== null) {
-            preKeyPair = yield store.getLocalPreKeyPair(message.preKeyId);
-        }
-
-        var bobParameters = {
-            sessionVersion: preKeyWhisperMessage.version.current,
-            theirBaseKey: message.baseKey,
-            theirIdentityKey: message.identityKey,
-            ourIdentityKeyPair: yield store.getLocalIdentityKeyPair(),
-            ourSignedPreKeyPair: ourSignedPreKeyPair,
-            ourRatchetKeyPair: ourSignedPreKeyPair,
-            ourOneTimePreKeyPair: preKeyPair
-        };
-
-        var sessionState = yield initializeBobSession(bobParameters);
-        sessionState.theirBaseKey = message.baseKey;
-        var clonedSession = new Session(session);
-        clonedSession.addState(sessionState);
-        return {
-            session: clonedSession,
+    if (session) {
+      for (var cachedSessionState of session.states) {
+        if (cachedSessionState.theirBaseKey &&
+          ArrayBufferUtils.areEqual(cachedSessionState.theirBaseKey, message.baseKey)) {
+          return {
+            session: session,
             identityKey: message.identityKey,
             registrationId: message.registrationId
-        };
-    });
-
-    // TODO: Implement
-    //self.createSessionFromKeyExchange = (toIdentity, keyExchange) => {};
-
-    var initializeAliceSession = co.wrap(function*(parameters) {
-        var senderRatchetKeyPair = yield crypto.generateKeyPair();
-
-        var agreements = [
-            crypto.calculateAgreement(parameters.theirSignedPreKey, parameters.ourIdentityKeyPair.private),
-            crypto.calculateAgreement(parameters.theirIdentityKey, parameters.ourBaseKeyPair.private),
-            crypto.calculateAgreement(parameters.theirSignedPreKey, parameters.ourBaseKeyPair.private)
-        ];
-        if (parameters.sessionVersion >= 3 && parameters.theirOneTimePreKey) {
-            agreements.push(crypto.calculateAgreement(parameters.theirOneTimePreKey,
-                parameters.ourBaseKeyPair.private));
+          }
         }
-        const initChain = yield ratchet.deriveInitialRootKeyAndChain(parameters.sessionVersion, yield agreements);
-        const theirRootKey = initChain.rootKey
-        const receivingChain = initChain.chain
-        const nextChain = yield ratchet.deriveNextRootKeyAndChain(theirRootKey, parameters.theirRatchetKey,
-                senderRatchetKeyPair.private);
-        const rootKey = nextChain.rootKey
-        const sendingChain = nextChain.chain
+      }
+    }
 
-        var sessionState = new SessionState({
-            sessionVersion: parameters.sessionVersion,
-            remoteIdentityKey: parameters.theirIdentityKey,
-            localIdentityKey: parameters.ourIdentityKeyPair.public,
-            rootKey,
-            sendingChain,
-            senderRatchetKeyPair
-        });
-        sessionState.addReceivingChain(parameters.theirRatchetKey, receivingChain);
-        return sessionState;
-    });
+    var ourSignedPreKeyPair = yield store.getLocalSignedPreKeyPair(message.signedPreKeyId)
 
-    var initializeBobSession = co.wrap(function*(parameters) {
-        var agreements = [
-            crypto.calculateAgreement(parameters.theirIdentityKey, parameters.ourSignedPreKeyPair.private),
-            crypto.calculateAgreement(parameters.theirBaseKey, parameters.ourIdentityKeyPair.private),
-            crypto.calculateAgreement(parameters.theirBaseKey, parameters.ourSignedPreKeyPair.private)
-        ];
+    var preKeyPair
+    if (message.preKeyId !== null) {
+      preKeyPair = yield store.getLocalPreKeyPair(message.preKeyId)
+    }
 
-        if (parameters.sessionVersion >= 3 && parameters.ourOneTimePreKeyPair) {
-            agreements.push(crypto.calculateAgreement(parameters.theirBaseKey,
-                parameters.ourOneTimePreKeyPair.private));
-        }
+    var bobParameters = {
+      sessionVersion: preKeyWhisperMessage.version.current,
+      theirBaseKey: message.baseKey,
+      theirIdentityKey: message.identityKey,
+      ourIdentityKeyPair: yield store.getLocalIdentityKeyPair(),
+      ourSignedPreKeyPair: ourSignedPreKeyPair,
+      ourRatchetKeyPair: ourSignedPreKeyPair,
+      ourOneTimePreKeyPair: preKeyPair
+    }
 
-        const initChain = yield ratchet.deriveInitialRootKeyAndChain(parameters.sessionVersion, yield agreements);
-        const rootKey = initChain.rootKey
-        const sendingChain = initChain.chain
+    var sessionState = yield initializeBobSession(bobParameters)
+    sessionState.theirBaseKey = message.baseKey
+    var clonedSession = new Session(session)
+    clonedSession.addState(sessionState)
+    return {
+      session: clonedSession,
+      identityKey: message.identityKey,
+      registrationId: message.registrationId
+    }
+  })
 
-        return new SessionState({
-            sessionVersion: parameters.sessionVersion,
-            remoteIdentityKey: parameters.theirIdentityKey,
-            localIdentityKey: parameters.ourIdentityKeyPair.public,
-            rootKey: rootKey,
-            sendingChain: sendingChain,
-            senderRatchetKeyPair: parameters.ourRatchetKeyPair
-        });
-    });
+  // TODO: Implement
+  // self.createSessionFromKeyExchange = (toIdentity, keyExchange) => {}
 
-    Object.freeze(self);
+  var initializeAliceSession = co.wrap(function * (parameters) {
+    var senderRatchetKeyPair = yield crypto.generateKeyPair()
+
+    var agreements = [
+      crypto.calculateAgreement(parameters.theirSignedPreKey, parameters.ourIdentityKeyPair.private),
+      crypto.calculateAgreement(parameters.theirIdentityKey, parameters.ourBaseKeyPair.private),
+      crypto.calculateAgreement(parameters.theirSignedPreKey, parameters.ourBaseKeyPair.private)
+    ]
+    if (parameters.sessionVersion >= 3 && parameters.theirOneTimePreKey) {
+      agreements.push(crypto.calculateAgreement(parameters.theirOneTimePreKey,
+        parameters.ourBaseKeyPair.private))
+    }
+    const initChain = yield ratchet.deriveInitialRootKeyAndChain(parameters.sessionVersion, yield agreements)
+    const theirRootKey = initChain.rootKey
+    const receivingChain = initChain.chain
+    const nextChain = yield ratchet.deriveNextRootKeyAndChain(theirRootKey, parameters.theirRatchetKey,
+      senderRatchetKeyPair.private)
+    const rootKey = nextChain.rootKey
+    const sendingChain = nextChain.chain
+
+    var sessionState = new SessionState({
+      sessionVersion: parameters.sessionVersion,
+      remoteIdentityKey: parameters.theirIdentityKey,
+      localIdentityKey: parameters.ourIdentityKeyPair.public,
+      rootKey,
+      sendingChain,
+      senderRatchetKeyPair})
+    sessionState.addReceivingChain(parameters.theirRatchetKey, receivingChain)
+    return sessionState
+  })
+
+  var initializeBobSession = co.wrap(function * (parameters) {
+    var agreements = [
+      crypto.calculateAgreement(parameters.theirIdentityKey, parameters.ourSignedPreKeyPair.private),
+      crypto.calculateAgreement(parameters.theirBaseKey, parameters.ourIdentityKeyPair.private),
+      crypto.calculateAgreement(parameters.theirBaseKey, parameters.ourSignedPreKeyPair.private)
+    ]
+
+    if (parameters.sessionVersion >= 3 && parameters.ourOneTimePreKeyPair) {
+      agreements.push(crypto.calculateAgreement(parameters.theirBaseKey,
+        parameters.ourOneTimePreKeyPair.private))
+    }
+
+    const initChain = yield ratchet.deriveInitialRootKeyAndChain(parameters.sessionVersion, yield agreements)
+    const rootKey = initChain.rootKey
+    const sendingChain = initChain.chain
+
+    return new SessionState({
+      sessionVersion: parameters.sessionVersion,
+      remoteIdentityKey: parameters.theirIdentityKey,
+      localIdentityKey: parameters.ourIdentityKeyPair.public,
+      rootKey: rootKey,
+      sendingChain: sendingChain,
+      senderRatchetKeyPair: parameters.ourRatchetKeyPair
+    })
+  })
+
+  Object.freeze(self)
 }
 
 module.exports = SessionFactory

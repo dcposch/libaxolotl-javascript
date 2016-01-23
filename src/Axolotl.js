@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,13 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const SessionFactory = require("./SessionFactory")
-const SessionCipher = require("./SessionCipher")
-const InvalidMessageException = require("./Exceptions").InvalidMessageException
-const Store = require("./Store")
-const Crypto = require("./Crypto")
-const co = require("co")
-const axolotlCrypto = require("axolotl-crypto")
+const SessionFactory = require('./SessionFactory')
+const SessionCipher = require('./SessionCipher')
+const Store = require('./Store')
+const Crypto = require('./Crypto')
+const co = require('co')
 
 /**
  * A public/private key pair
@@ -86,169 +84,168 @@ const axolotlCrypto = require("axolotl-crypto")
  * @param {Store} store - storage service
  * @constructor
  */
-function Axolotl(crypto, store) {
-    var self = this;
+function Axolotl (crypto, store) {
+  var self = this
 
-    var wrappedStore = new Store(store);
-    var wrappedCrypto = new Crypto(crypto);
+  var wrappedStore = new Store(store)
+  var wrappedCrypto = new Crypto(crypto)
 
-    var sessionFactory = new SessionFactory(wrappedCrypto, wrappedStore);
-    var sessionCipher = new SessionCipher(wrappedCrypto);
+  var sessionFactory = new SessionFactory(wrappedCrypto, wrappedStore)
+  var sessionCipher = new SessionCipher(wrappedCrypto)
 
-    /**
-     * Generate an identity key pair. Clients should only do this once, at install time.
-     *
-     * @method
-     * @return {Promise.<KeyPair, Error>} generated key pair.
-     */
-    this.generateIdentityKeyPair = () => wrappedCrypto.generateKeyPair();
+  /**
+   * Generate an identity key pair. Clients should only do this once, at install time.
+   *
+   * @method
+   * @return {Promise.<KeyPair, Error>} generated key pair.
+   */
+  this.generateIdentityKeyPair = () => wrappedCrypto.generateKeyPair()
 
-    /**
-     * Generate a registration ID. Clients should only do this once, at install time.
-     *
-     * @method
-     * @param {boolean} extendedRange - By default (false), the generated registration
-     *                                  ID is sized to require the minimal possible protobuf
-     *                                  encoding overhead. Specify true if the caller needs
-     *                                  the full range of MAX_INT at the cost of slightly
-     *                                  higher encoding overhead.
-     * @return {number} generated registration ID.
-     */
-    this.generateRegistrationId = co.wrap(function*(extendedRange) {
-        var upperLimit = (extendedRange) ? 0x7ffffffe : 0x3ffc;
-        var bytes = yield wrappedCrypto.randomBytes(4);
-        var number = new Uint32Array(bytes)[0];
-        // TODO: Mod is a bad way to do this. Makes lower values more likely.
-        return (number % upperLimit) + 1;
-    });
+  /**
+   * Generate a registration ID. Clients should only do this once, at install time.
+   *
+   * @method
+   * @param {boolean} extendedRange - By default (false), the generated registration
+   *                                  ID is sized to require the minimal possible protobuf
+   *                                  encoding overhead. Specify true if the caller needs
+   *                                  the full range of MAX_INT at the cost of slightly
+   *                                  higher encoding overhead.
+   * @return {number} generated registration ID.
+   */
+  this.generateRegistrationId = co.wrap(function * (extendedRange) {
+    var upperLimit = (extendedRange) ? 0x7ffffffe : 0x3ffc
+    var bytes = yield wrappedCrypto.randomBytes(4)
+    var number = new Uint32Array(bytes)[0]
+    // TODO: Mod is a bad way to do this. Makes lower values more likely.
+    return (number % upperLimit) + 1
+  })
 
-    /**
-     * Generate a list of PreKeys.  Clients should do this at install time, and
-     * subsequently any time the list of PreKeys stored on the server runs low.
-     * <p>
-     * PreKey IDs are 16-bit numbers, so they will eventually be repeated.  Clients should
-     * store PreKeys in a circular buffer, so that they are repeated as infrequently
-     * as possible.
-     *
-     * @method
-     * @param {number} start - The starting PreKey ID, inclusive.
-     * @param {number} count - The number of PreKeys to generate.
-     * @return {Promise.<Array.<PreKey>, Error>} the list of generated PreKeyRecords.
-     */
-    this.generatePreKeys = co.wrap(function*(start, count) {
-        var results = [];
-        start--;
-        for (var i = 0; i < count; i++) {
-            results.push({
-                id: ((start + i) % 0xfffffe) + 1,
-                keyPair: yield wrappedCrypto.generateKeyPair()
-            });
-        }
-        return results;
-    });
+  /**
+   * Generate a list of PreKeys.  Clients should do this at install time, and
+   * subsequently any time the list of PreKeys stored on the server runs low.
+   * <p>
+   * PreKey IDs are 16-bit numbers, so they will eventually be repeated.  Clients should
+   * store PreKeys in a circular buffer, so that they are repeated as infrequently
+   * as possible.
+   *
+   * @method
+   * @param {number} start - The starting PreKey ID, inclusive.
+   * @param {number} count - The number of PreKeys to generate.
+   * @return {Promise.<Array.<PreKey>, Error>} the list of generated PreKeyRecords.
+   */
+  this.generatePreKeys = co.wrap(function * (start, count) {
+    var results = []
+    start--
+    for (var i = 0; i < count; i++) {
+      results.push({
+        id: ((start + i) % 0xfffffe) + 1,
+        keyPair: yield wrappedCrypto.generateKeyPair()
+      })
+    }
+    return results
+  })
 
-    /**
-     * Generate the last resort PreKey.  Clients should do this only once, at install
-     * time, and durably store it for the length of the install.
-     *
-     * @method
-     * @return {Promise.<PreKey, Error>} the generated last resort PreKeyRecord.
-     */
-    this.generateLastResortPreKey = co.wrap(function*() {
-        return {
-            id: 0xffffff,
-            keyPair: yield wrappedCrypto.generateKeyPair()
-        };
-    });
+  /**
+   * Generate the last resort PreKey.  Clients should do this only once, at install
+   * time, and durably store it for the length of the install.
+   *
+   * @method
+   * @return {Promise.<PreKey, Error>} the generated last resort PreKeyRecord.
+   */
+  this.generateLastResortPreKey = co.wrap(function * () {
+    return {
+      id: 0xffffff,
+      keyPair: yield wrappedCrypto.generateKeyPair()
+    }
+  })
 
-    /**
-     * Generate a signed PreKey
-     *
-     * @method
-     * @param {KeyPair} identityKeyPair - The local client's identity key pair.
-     * @param {number} signedPreKeyId - The PreKey id to assign the generated signed PreKey
-     * @return {SignedPreKey} the generated signed PreKey
-     */
-    this.generateSignedPreKey = co.wrap(function*(identityKeyPair, signedPreKeyId) {
-        var keyPair = yield wrappedCrypto.generateKeyPair();
-        var signature = yield wrappedCrypto.sign(identityKeyPair.private, keyPair.public);
-        return {
-            id: signedPreKeyId,
-            keyPair: keyPair,
-            signature: signature
-        };
-    });
+  /**
+   * Generate a signed PreKey
+   *
+   * @method
+   * @param {KeyPair} identityKeyPair - The local client's identity key pair.
+   * @param {number} signedPreKeyId - The PreKey id to assign the generated signed PreKey
+   * @return {SignedPreKey} the generated signed PreKey
+   */
+  this.generateSignedPreKey = co.wrap(function * (identityKeyPair, signedPreKeyId) {
+    var keyPair = yield wrappedCrypto.generateKeyPair()
+    var signature = yield wrappedCrypto.sign(identityKeyPair.private, keyPair.public)
+    return {
+      id: signedPreKeyId,
+      keyPair: keyPair,
+      signature: signature
+    }
+  })
 
-    /**
-     * @typedef {Object} PreKeyBundle
-     * @property {ArrayBuffer} identityKey - The remote identity's public key.
-     * @property {Number} preKeyId - The identifier of the pre-key included in this bundle.
-     * @property {ArrayBuffer} preKey - The public half of the pre-key.
-     * @property {Number} signedPreKeyId - The identifier of the signed pre-key included in this bundle.
-     * @property {ArrayBuffer} signedPreKey - The public half of the signed pre-key.
-     * @property {ArrayBuffer} signedPreKeySignature - The signature associated with the `signedPreKey`
-     */
+  /**
+   * @typedef {Object} PreKeyBundle
+   * @property {ArrayBuffer} identityKey - The remote identity's public key.
+   * @property {Number} preKeyId - The identifier of the pre-key included in this bundle.
+   * @property {ArrayBuffer} preKey - The public half of the pre-key.
+   * @property {Number} signedPreKeyId - The identifier of the signed pre-key included in this bundle.
+   * @property {ArrayBuffer} signedPreKey - The public half of the signed pre-key.
+   * @property {ArrayBuffer} signedPreKeySignature - The signature associated with the `signedPreKey`
+   */
 
-    /**
-     * Create a session from a pre-key bundle, probably retrieved from a server.
-     * @method
-     * @type {PreKeyBundle} a pre-key bundle
-     * @returns {Promise.<Session, Error>}
-     */
-    this.createSessionFromPreKeyBundle = sessionFactory.createSessionFromPreKeyBundle;
+  /**
+   * Create a session from a pre-key bundle, probably retrieved from a server.
+   * @method
+   * @type {PreKeyBundle} a pre-key bundle
+   * @returns {Promise.<Session, Error>}
+   */
+  this.createSessionFromPreKeyBundle = sessionFactory.createSessionFromPreKeyBundle
 
-    /**
-     * Encrypt a message using the session.
-     * <p>
-     * If this method succeeds, the passed in session should be destroyed. This method must never be called with
-     * that session again.
-     *
-     * @method
-     * @param {Session} session
-     * @param {ArrayBuffer} message - the message bytes to be encrypted (optionally padded)
-     * @return {Promise.<Object, Error>} an object containing the encrypted message bytes as well as a new session
-     */
-    this.encryptMessage = sessionCipher.encryptMessage;
+  /**
+   * Encrypt a message using the session.
+   * <p>
+   * If this method succeeds, the passed in session should be destroyed. This method must never be called with
+   * that session again.
+   *
+   * @method
+   * @param {Session} session
+   * @param {ArrayBuffer} message - the message bytes to be encrypted (optionally padded)
+   * @return {Promise.<Object, Error>} an object containing the encrypted message bytes as well as a new session
+   */
+  this.encryptMessage = sessionCipher.encryptMessage
 
-    /**
-     * Decrypt a WhisperMessage using session.
-     * <p>
-     * If this method succeeds, the passed in session should be destroyed. This method must never be called with
-     * that session again.
-     *
-     * @method
-     * @param {Session} session
-     * @param {ArrayBuffer} whisperMessageBytes - the encrypted message bytes
-     * @returns {Promise.<Object, InvalidMessageException>} an object containing the decrypted message and a new session
-     */
-    this.decryptWhisperMessage = sessionCipher.decryptWhisperMessage;
+  /**
+   * Decrypt a WhisperMessage using session.
+   * <p>
+   * If this method succeeds, the passed in session should be destroyed. This method must never be called with
+   * that session again.
+   *
+   * @method
+   * @param {Session} session
+   * @param {ArrayBuffer} whisperMessageBytes - the encrypted message bytes
+   * @returns {Promise.<Object, InvalidMessageException>} an object containing the decrypted message and a new session
+   */
+  this.decryptWhisperMessage = sessionCipher.decryptWhisperMessage
 
-    /**
-     * Unwrap the WhisperMessage from a PreKeyWhisperMessage and attempt to decrypt it using session. If a session does
-     * not already exist, it will be created.
-     *
-     * @method
-     * @param {Session} session - a session, if one exists, or null otherwise.
-     * @param {ArrayBuffer} preKeyWhisperMessageBytes - the encrypted message bytes
-     * @returns {Promise.<Object, InvalidMessageException>} an object containing the decrypted message and a new session
-     */
-    this.decryptPreKeyWhisperMessage = co.wrap(function*(session, preKeyWhisperMessageBytes) {
-        const result = yield sessionFactory.createSessionFromPreKeyWhisperMessage(session, preKeyWhisperMessageBytes);
-        const newSession = result.session
-        const identityKey = result.identityKey
-        const registrationId = result.registrationId 
-        const decryptionResult = yield sessionCipher.decryptPreKeyWhisperMessage(newSession, preKeyWhisperMessageBytes);
-        const finalSession = decryptionResult.session
-        const message = decryptionResult.message
-        return {
-            message,
-            session: finalSession,
-            identityKey,
-            registrationId
-        };
-    });
+  /**
+   * Unwrap the WhisperMessage from a PreKeyWhisperMessage and attempt to decrypt it using session. If a session does
+   * not already exist, it will be created.
+   *
+   * @method
+   * @param {Session} session - a session, if one exists, or null otherwise.
+   * @param {ArrayBuffer} preKeyWhisperMessageBytes - the encrypted message bytes
+   * @returns {Promise.<Object, InvalidMessageException>} an object containing the decrypted message and a new session
+   */
+  this.decryptPreKeyWhisperMessage = co.wrap(function * (session, preKeyWhisperMessageBytes) {
+    const result = yield sessionFactory.createSessionFromPreKeyWhisperMessage(session, preKeyWhisperMessageBytes)
+    const newSession = result.session
+    const identityKey = result.identityKey
+    const registrationId = result.registrationId
+    const decryptionResult = yield sessionCipher.decryptPreKeyWhisperMessage(newSession, preKeyWhisperMessageBytes)
+    const finalSession = decryptionResult.session
+    const message = decryptionResult.message
+    return {
+      message,
+      session: finalSession,
+      identityKey,
+      registrationId}
+  })
 
-    Object.freeze(self);
+  Object.freeze(self)
 }
 
 module.exports = Axolotl

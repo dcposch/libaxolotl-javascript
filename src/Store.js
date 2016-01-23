@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const PromiseInterfaceDecorator = require("./PromiseInterfaceDecorator")
+const PromiseInterfaceDecorator = require('./PromiseInterfaceDecorator')
 
 var methodNames = [
-    "getLocalIdentityKeyPair",
-    "getLocalRegistrationId",
-    "getLocalSignedPreKeyPair",
-    "getLocalPreKeyPair"
-];
+  'getLocalIdentityKeyPair',
+  'getLocalRegistrationId',
+  'getLocalSignedPreKeyPair',
+  'getLocalPreKeyPair'
+]
 
 class Store extends PromiseInterfaceDecorator {
-    constructor(store) {
-        super(store, methodNames);
-    }
+  constructor (store) {
+    super(store, methodNames)
+  }
 }
 
 module.exports = Store

@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -15,22 +15,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-"use strict";
+'use strict'
 
 /**
  * A chain holds the state of the sub ratchet, used for sending multiple messages before receiving a reply.
  */
 class Chain {
-    /**
-     *
-     * @param {ArrayBuffer} key
-     */
-    constructor(key) {
-        this.key = key;
-        this.index = 0;
-        this.messageKeys = [];
-        Object.seal(this);
-    }
+  /**
+   *
+   * @param {ArrayBuffer} key
+   */
+  constructor (key) {
+    this.key = key
+    this.index = 0
+    this.messageKeys = []
+    Object.seal(this)
+  }
 }
 
 module.exports = Chain

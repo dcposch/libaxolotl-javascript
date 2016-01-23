@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -16,23 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const PromiseInterfaceDecorator = require("./PromiseInterfaceDecorator")
+const PromiseInterfaceDecorator = require('./PromiseInterfaceDecorator')
 
 var methodNames = [
-    "generateKeyPair",
-    "calculateAgreement",
-    "randomBytes",
-    "sign",
-    "verifySignature",
-    "hmac",
-    "encrypt",
-    "decrypt"
-];
+  'generateKeyPair',
+  'calculateAgreement',
+  'randomBytes',
+  'sign',
+  'verifySignature',
+  'hmac',
+  'encrypt',
+  'decrypt'
+]
 
 class Crypto extends PromiseInterfaceDecorator {
-    constructor(crypto) {
-        super(crypto, methodNames);
-    }
+  constructor (crypto) {
+    super(crypto, methodNames)
+  }
 }
 
 module.exports = Crypto
