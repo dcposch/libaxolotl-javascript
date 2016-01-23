@@ -6,23 +6,27 @@
   "directories": {
     "test": "test"
   },
+  "dependencies": {
+    "axolotl-crypto": "*",
+    "protobufjs": "*",
+    "co": "*"
+  },
   "devDependencies": {
     "standard": "*",
-    "blanket": "^1.1.6",
-    "bytebuffer": "^3.5.4",
-    "chai": "~1.10.0",
-    "chai-as-promised": "^4.1.1",
-    "grunt-cli": "~0.1.13",
-    "grunt-blanket": "0.0.8",
-    "grunt-contrib-clean": "^0.6.0",
-    "grunt-contrib-concat": "~0.5.0",
-    "grunt-contrib-copy": "^0.7.0",
-    "grunt-karma": "^0.10.1",
-    "grunt-mocha-test": "~0.12.4",
-    "long": "^2.2.3",
-    "mocha": "~2.1.0",
-    "requirejs-browser": "^2.1.9",
-    "sinon": "~1.12.2"
+    "blanket": "*",
+    "bytebuffer": "*",
+    "chai": "*",
+    "chai-as-promised": "*",
+    "grunt": "*",
+    "grunt-cli": "*",
+    "grunt-blanket": "*",
+    "grunt-contrib-clean": "*",
+    "grunt-contrib-copy": "*",
+    "grunt-mocha-test": "*",
+    "long": "*",
+    "mocha": "*",
+    "requirejs-browser": "*",
+    "sinon": "*"
   },
   "scripts": {
     "test": "standard && grunt test"
@@ -36,10 +40,5 @@
   "repository": {
     "type": "git",
     "url": "http://github.com/joebandenburg/libaxolotl-javascript.git"
-  },
-  "dependencies": {
-    "axolotl-crypto": "^1.1.0",
-    "protobufjs": "~3.8.2",
-    "co": "^4.1.0"
   }
 }
