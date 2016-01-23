@@ -2,7 +2,6 @@
 
 module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-mocha-test') // For server-side testing
-  grunt.loadNpmTasks('grunt-karma') // For client-side testing
   grunt.loadNpmTasks('grunt-blanket')
   grunt.loadNpmTasks('grunt-contrib-clean')
   grunt.loadNpmTasks('grunt-contrib-copy')
@@ -46,14 +45,7 @@ module.exports = function (grunt) {
         }
       }
     },
-    karma: {
-      integrationTests: {
-        options: {
-          configFile: 'karma.conf.js'
-        }
-      }
-    },
-    concat: {
+    oncat: {
       dist: {
         src: ['banner.js', 'build/axolotl.js'],
         dest: 'dist/axolotl.js'
@@ -66,5 +58,5 @@ module.exports = function (grunt) {
   grunt.registerTask('test', ['clean', 'mochaTest:unitTests'])
   grunt.registerTask('default', ['test'])
   grunt.registerTask('dist', ['default', 'concat'])
-  grunt.registerTask('integration-test', ['dist', 'mochaTest:integrationTests', 'karma:integrationTests'])
+  grunt.registerTask('integration-test', ['dist', 'mochaTest:integrationTests'])
 }

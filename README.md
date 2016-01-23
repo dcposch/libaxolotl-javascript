@@ -26,22 +26,8 @@ var axolotl = require("axolotl");
 
 ### Browser
 
-Install using bower:
-```
-$ bower install axolotl
-```
+Use Browserify.
 
-and import using AMD:
-```javascript
-require(["axolotl"], function(axolotl) {
-
-});
-```
-
-or without:
-```javascript
-window.axolotl(...)
-```
 
 ## Getting started
 
