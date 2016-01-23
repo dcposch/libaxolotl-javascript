@@ -1,3 +1,4 @@
+"use strict"
 var fromHex = function(hex) {
     return window.dcodeIO.ByteBuffer.fromHex(hex).toArrayBuffer();
 };

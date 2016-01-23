@@ -1,3 +1,4 @@
+"use strict"
 /**
  * Copyright (C) 2015 Joe Bandenburg
  *
@@ -14,11 +15,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+"use strict";
 
 /**
  * A chain holds the state of the sub ratchet, used for sending multiple messages before receiving a reply.
  */
-export default class Chain {
+class Chain {
     /**
      *
      * @param {ArrayBuffer} key
@@ -30,3 +32,5 @@ export default class Chain {
         Object.seal(this);
     }
 }
+
+module.exports = Chain
