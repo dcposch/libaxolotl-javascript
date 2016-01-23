@@ -44,12 +44,6 @@ module.exports = function (grunt) {
           clearRequireCache: true
         }
       }
-    },
-    oncat: {
-      dist: {
-        src: ['banner.js', 'build/axolotl.js'],
-        dest: 'dist/axolotl.js'
-      }
     }
   })
 
